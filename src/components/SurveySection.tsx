@@ -62,7 +62,7 @@ export const SurveySection: React.FC = () => {
         <div className="glass-card rounded-2xl p-6 sm:p-8 relative overflow-hidden border border-gray-800">
           <div className="text-xs font-bold text-[#8b5cf6] mb-1 tracking-widest">QUESTION 01</div>
           <h3 className="text-xl sm:text-2xl font-bold text-white mb-6">
-            "kya ap ne sleepy or freaki ki chuchu chati hai"
+            "kya ap ne sleepy or freaki ki chuchi chati hai"
           </h3>
 
           <div
