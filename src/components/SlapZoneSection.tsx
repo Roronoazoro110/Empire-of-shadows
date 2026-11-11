@@ -77,6 +77,7 @@ export const SlapZoneSection: React.FC = () => {
 
   const triggerSlap = () => {
     sound.playSlap(1.2);
+    sound.playBossHurt();
     setDummyAnim('');
     setIsScreenShaking(false);
     setShowLeftMark(true);
@@ -108,6 +109,7 @@ export const SlapZoneSection: React.FC = () => {
 
   const triggerHipSlap = () => {
     sound.playSlap(0.75);
+    sound.playBossHurt();
     setDummyAnim('');
     setTimeout(() => setDummyAnim('animate-hip'), 10);
 

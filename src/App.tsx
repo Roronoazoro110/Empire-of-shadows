@@ -78,10 +78,10 @@ export default function App() {
 
           <div className="flex items-center gap-2 text-center">
             <span className="text-xs sm:text-sm font-black tracking-wider text-emerald-400">
-              ⚔️ ZORO'S AURA FARMING GAME
+              ⚔️ BEAT THE ACHI RANDI CHALLENGE
             </span>
             <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-red-950 border border-red-700 text-red-300 font-mono font-bold">
-              🍑 THE ASS OVERLORD
+              ☠️ THE FALLEN MEER
             </span>
           </div>
 

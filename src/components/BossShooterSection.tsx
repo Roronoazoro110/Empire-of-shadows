@@ -96,10 +96,11 @@ export const BossShooterSection: React.FC<BossShooterSectionProps> = ({ isStanda
   const [customAudio, setCustomAudio] = useState({
     shoot: '',
     crit: '',
-    bossHurt: '',
-    playerHurt: '',
+    bossHurt: '/assets/aistudio/damage_a0c559b9.mp3',
+    playerHurt: '/assets/aistudio/user_damage_682f3b48.mp3',
+    defeat: '/assets/aistudio/boss_win_4ae7645d.mp3',
     reload: '',
-    victory: '',
+    victory: '/assets/aistudio/user_win_a7817b17.mp3',
   });
 
   // Crosshair & gun position
@@ -141,9 +142,25 @@ export const BossShooterSection: React.FC<BossShooterSectionProps> = ({ isStanda
     // Check if custom audio URL is provided
     const customUrl = (customAudio as Record<string, string>)[type];
     if (customUrl && typeof Audio !== 'undefined') {
+      if (type === 'bossHurt' && customUrl === '/assets/aistudio/damage_a0c559b9.mp3') {
+        sound.playBossHurt();
+        return;
+      }
+      if (type === 'playerHurt' && customUrl === '/assets/aistudio/user_damage_682f3b48.mp3') {
+        sound.playPlayerHurt();
+        return;
+      }
+      if (type === 'defeat' && customUrl === '/assets/aistudio/boss_win_4ae7645d.mp3') {
+        sound.playDefeat();
+        return;
+      }
+      if (type === 'victory' && customUrl === '/assets/aistudio/user_win_a7817b17.mp3') {
+        sound.playVictory();
+        return;
+      }
       try {
         const audioObj = new Audio(customUrl);
-        audioObj.volume = 0.8;
+        audioObj.volume = 0.85;
         audioObj.play().catch(() => {});
         return;
       } catch {
@@ -181,7 +198,7 @@ export const BossShooterSection: React.FC<BossShooterSectionProps> = ({ isStanda
         sound.playExplosion();
         break;
       case 'victory':
-        sound.playFanfare();
+        sound.playVictory();
         break;
       case 'defeat':
         sound.playDefeat();
@@ -191,6 +208,8 @@ export const BossShooterSection: React.FC<BossShooterSectionProps> = ({ isStanda
 
   // Start game handler
   const startGame = () => {
+    sound.stopDefeat();
+    sound.stopVictory();
     setBossHp(MAX_BOSS_HP);
     setPlayerHp(MAX_PLAYER_HP);
     setAmmo(CLIP_SIZE);
@@ -371,6 +390,7 @@ export const BossShooterSection: React.FC<BossShooterSectionProps> = ({ isStanda
         return next;
       });
       playSfx('crit');
+      playSfx('bossHurt');
       spawnImpactParticles(clickX, clickY, '#f43f5e', 16);
       spawnFloatingText(`🍑 BOOTY CRIT! -${critDamage}`, clickX, clickY, '#f43f5e', true);
       setScore((s) => s + critDamage * 2);
@@ -388,6 +408,7 @@ export const BossShooterSection: React.FC<BossShooterSectionProps> = ({ isStanda
       // Phase 2 shield check
       if (bossPhase === 2 && !isCoreExposed && distToBoss > 8) {
         playSfx('hit');
+        playSfx('bossHurt');
         spawnFloatingText('SHIELDED! -20', clickX, clickY, '#94a3b8');
         setBossHp((hp) => Math.max(0, hp - 20));
         return;
@@ -400,6 +421,7 @@ export const BossShooterSection: React.FC<BossShooterSectionProps> = ({ isStanda
         return next;
       });
       playSfx('hit');
+      playSfx('bossHurt');
       spawnImpactParticles(clickX, clickY, '#ef4444', 8);
       spawnFloatingText(`-${damage}`, clickX, clickY, '#ffffff');
       setScore((s) => s + damage);
@@ -424,6 +446,7 @@ export const BossShooterSection: React.FC<BossShooterSectionProps> = ({ isStanda
     setSuperCharge(0);
     playSfx('explode');
     playSfx('crit');
+    playSfx('bossHurt');
     setIsScreenShaking(true);
     setTimeout(() => setIsScreenShaking(false), 500);
 
@@ -614,8 +637,8 @@ export const BossShooterSection: React.FC<BossShooterSectionProps> = ({ isStanda
         <span className="px-4 py-1.5 rounded-full bg-red-600/20 border border-red-600/40 text-red-400 text-xs font-black uppercase tracking-widest inline-block animate-pulse">
           NIGHTMARE DIFFICULTY • FIRST-PERSON BOSS SHOOTER
         </span>
-        <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight mt-3">
-          SHADOW RAID: THE FALLEN OVERLORD 💀💥
+        <h2 className="text-3xl sm:text-5xl font-black tracking-tight mt-3 bg-gradient-to-r from-red-500 via-rose-400 to-amber-400 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(244,63,94,0.45)]">
+          BEAT THE ACHI RANDI CHALLENGE, THE FALLEN MEER 🥰☠️☠️
         </h2>
         <p className="text-gray-400 text-sm mt-1">
           Aim and shoot with your crosshair. Destroy incoming void orbs or suffer lethal damage!
@@ -636,7 +659,7 @@ export const BossShooterSection: React.FC<BossShooterSectionProps> = ({ isStanda
               <Skull className="w-5 h-5 text-red-500 animate-pulse" />
               <div>
                 <span className="text-xs sm:text-sm font-black text-white tracking-wide block">
-                  ZORO • THE ASS OVERLORD 🍑
+                  THE FALLEN MEER • ACHI RANDI CHALLENGE ☠️
                 </span>
                 <span className="text-[10px] text-red-400 font-bold uppercase tracking-wider">
                   Phase {bossPhase} of 3 • {bossPhase === 3 ? '🍑 CLAP OF DOOM' : bossPhase === 2 ? 'SHIELDED DUMPY' : 'THICC BARRAGE'}
@@ -728,6 +751,9 @@ export const BossShooterSection: React.FC<BossShooterSectionProps> = ({ isStanda
               <p className="text-sm text-amber-300 font-bold">
                 You slayed the Shadow Overlord! Final Score: {score.toLocaleString()}
               </p>
+              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-950/70 border border-amber-600/70 text-xs text-amber-300 font-bold shadow-inner">
+                <span>🗣️ "JEET GAYE! 🔥" Victory Celebration! 👑</span>
+              </div>
               <button
                 onClick={startGame}
                 className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-red-600 text-white font-black text-sm uppercase tracking-wider shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer"
@@ -745,6 +771,9 @@ export const BossShooterSection: React.FC<BossShooterSectionProps> = ({ isStanda
               <p className="text-sm text-gray-400 max-w-sm">
                 The Shadow Overlord's void barrage wiped your shields. Better reflexes next time!
               </p>
+              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-950/70 border border-red-800 text-xs text-red-300 font-bold shadow-inner">
+                <span>🗣️ "Wah apni boondi ka badla liya maine!" 😈</span>
+              </div>
               <button
                 onClick={startGame}
                 className="px-8 py-3.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-black text-sm uppercase tracking-wider shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer"
@@ -1049,12 +1078,45 @@ export const BossShooterSection: React.FC<BossShooterSectionProps> = ({ isStanda
               </div>
 
               <div>
-                <label className="text-[10px] text-gray-400 font-bold block mb-1">Boss Roar / Attack Sound URL</label>
+                <label className="text-[10px] text-gray-400 font-bold block mb-1">Boss Damage Voice SFX URL</label>
                 <input
                   type="text"
-                  placeholder="https://.../roar.mp3"
+                  placeholder="/assets/aistudio/damage_a0c559b9.mp3"
                   value={customAudio.bossHurt}
                   onChange={(e) => setCustomAudio({ ...customAudio, bossHurt: e.target.value })}
+                  className="w-full px-3 py-1.5 rounded-lg bg-gray-950 border border-gray-800 text-white text-xs font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-gray-400 font-bold block mb-1">Player Damage Voice SFX URL</label>
+                <input
+                  type="text"
+                  placeholder="/assets/aistudio/user_damage_682f3b48.mp3"
+                  value={customAudio.playerHurt}
+                  onChange={(e) => setCustomAudio({ ...customAudio, playerHurt: e.target.value })}
+                  className="w-full px-3 py-1.5 rounded-lg bg-gray-950 border border-gray-800 text-white text-xs font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-gray-400 font-bold block mb-1">Player Defeat / Boss Win SFX URL</label>
+                <input
+                  type="text"
+                  placeholder="/assets/aistudio/boss_win_4ae7645d.mp3"
+                  value={customAudio.defeat}
+                  onChange={(e) => setCustomAudio({ ...customAudio, defeat: e.target.value })}
+                  className="w-full px-3 py-1.5 rounded-lg bg-gray-950 border border-gray-800 text-white text-xs font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-gray-400 font-bold block mb-1">Player Victory / Boss Defeated SFX URL</label>
+                <input
+                  type="text"
+                  placeholder="/assets/aistudio/user_win_a7817b17.mp3"
+                  value={customAudio.victory}
+                  onChange={(e) => setCustomAudio({ ...customAudio, victory: e.target.value })}
                   className="w-full px-3 py-1.5 rounded-lg bg-gray-950 border border-gray-800 text-white text-xs font-mono"
                 />
               </div>
@@ -1071,7 +1133,7 @@ export const BossShooterSection: React.FC<BossShooterSectionProps> = ({ isStanda
               </div>
             </div>
 
-            <div className="flex gap-2 pt-2">
+            <div className="flex flex-wrap gap-2 pt-2">
               <button
                 onClick={() => playSfx('shoot')}
                 className="px-3 py-1 rounded bg-gray-800 hover:bg-gray-700 text-xs text-white"
@@ -1083,6 +1145,30 @@ export const BossShooterSection: React.FC<BossShooterSectionProps> = ({ isStanda
                 className="px-3 py-1 rounded bg-gray-800 hover:bg-gray-700 text-xs text-white"
               >
                 Test Crit
+              </button>
+              <button
+                onClick={() => playSfx('bossHurt')}
+                className="px-3 py-1 rounded bg-gray-800 hover:bg-gray-700 text-xs text-white"
+              >
+                Test Boss Hurt
+              </button>
+              <button
+                onClick={() => playSfx('playerHurt')}
+                className="px-3 py-1 rounded bg-rose-900/60 hover:bg-rose-800 border border-rose-700 text-xs text-rose-200"
+              >
+                Test Player Hurt 🗣️
+              </button>
+              <button
+                onClick={() => playSfx('defeat')}
+                className="px-3 py-1 rounded bg-red-950 hover:bg-red-900 border border-red-700 text-xs text-red-300 font-bold"
+              >
+                Test Defeat Voice 💀
+              </button>
+              <button
+                onClick={() => playSfx('victory')}
+                className="px-3 py-1 rounded bg-amber-950 hover:bg-amber-900 border border-amber-600 text-xs text-amber-300 font-bold"
+              >
+                Test Victory Voice 🏆
               </button>
               <button
                 onClick={() => playSfx('explode')}

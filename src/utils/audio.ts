@@ -6,6 +6,12 @@ class SoundEngine {
   private ctx: AudioContext | null = null;
   private isMuted: boolean = false;
   private listeners: Set<MuteListener> = new Set();
+  private bossHurtAudio: HTMLAudioElement | null = null;
+  private lastBossHurtTime: number = 0;
+  private playerHurtAudio: HTMLAudioElement | null = null;
+  private lastPlayerHurtTime: number = 0;
+  private defeatAudio: HTMLAudioElement | null = null;
+  private victoryAudio: HTMLAudioElement | null = null;
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -47,6 +53,40 @@ class SoundEngine {
 
   public setMuted(muted: boolean) {
     this.isMuted = muted;
+    if (muted) {
+      if (this.bossHurtAudio) {
+        try {
+          this.bossHurtAudio.pause();
+          this.bossHurtAudio.currentTime = 0;
+        } catch {
+          // Ignore
+        }
+      }
+      if (this.playerHurtAudio) {
+        try {
+          this.playerHurtAudio.pause();
+          this.playerHurtAudio.currentTime = 0;
+        } catch {
+          // Ignore
+        }
+      }
+      if (this.defeatAudio) {
+        try {
+          this.defeatAudio.pause();
+          this.defeatAudio.currentTime = 0;
+        } catch {
+          // Ignore
+        }
+      }
+      if (this.victoryAudio) {
+        try {
+          this.victoryAudio.pause();
+          this.victoryAudio.currentTime = 0;
+        } catch {
+          // Ignore
+        }
+      }
+    }
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem('empire_sfx_muted', String(muted));
@@ -227,6 +267,44 @@ class SoundEngine {
     }
   }
 
+  // Player victory / boss defeat sound effect (from uploaded user_win asset)
+  public playVictory(volume: number = 0.95) {
+    if (this.isMuted) return;
+
+    if (typeof Audio !== 'undefined') {
+      try {
+        if (!this.victoryAudio) {
+          this.victoryAudio = new Audio('/assets/aistudio/user_win_a7817b17.mp3');
+        }
+        this.victoryAudio.currentTime = 0;
+        this.victoryAudio.volume = Math.max(0, Math.min(1, volume));
+        const playPromise = this.victoryAudio.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            this.playFanfare();
+          });
+        }
+        return;
+      } catch {
+        // Fall through to fanfare synth
+      }
+    }
+
+    this.playFanfare();
+  }
+
+  // Stop victory voice playback (e.g. when restarting battle)
+  public stopVictory() {
+    if (this.victoryAudio) {
+      try {
+        this.victoryAudio.pause();
+        this.victoryAudio.currentTime = 0;
+      } catch {
+        // Ignore
+      }
+    }
+  }
+
   /* -------------------------------------------------------------
      FIRST-PERSON SHOOTER & BOSS BATTLE SOUND EFFECTS
   ------------------------------------------------------------- */
@@ -335,8 +413,39 @@ class SoundEngine {
     }
   }
 
-  // Boss hurt grunt/pulse
-  public playBossHurt() {
+  // Boss hurt voice reaction (from uploaded asset) with synthesized fallback
+  public playBossHurt(volume: number = 0.95) {
+    if (this.isMuted) return;
+
+    const now = Date.now();
+    // Allow rapid hits with a comfortable debounce (120ms gap) to retrigger punchily
+    if (now - this.lastBossHurtTime > 120) {
+      this.lastBossHurtTime = now;
+      if (typeof Audio !== 'undefined') {
+        try {
+          if (!this.bossHurtAudio) {
+            this.bossHurtAudio = new Audio('/assets/aistudio/damage_a0c559b9.mp3');
+          }
+          this.bossHurtAudio.currentTime = 0;
+          this.bossHurtAudio.volume = Math.max(0, Math.min(1, volume));
+          const playPromise = this.bossHurtAudio.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(() => {
+              this.playSynthesizedBossHurt();
+            });
+          }
+          return;
+        } catch {
+          // Fall through to synthesizer
+        }
+      }
+    }
+
+    this.playSynthesizedBossHurt();
+  }
+
+  // Synthesized fallback for boss damage grunt
+  public playSynthesizedBossHurt() {
     const ctx = this.getContext();
     if (!ctx) return;
 
@@ -357,7 +466,7 @@ class SoundEngine {
       osc.start(now);
       osc.stop(now + 0.2);
     } catch (e) {
-      console.warn('Audio playBossHurt failed', e);
+      console.warn('Audio playSynthesizedBossHurt failed', e);
     }
   }
 
@@ -388,8 +497,39 @@ class SoundEngine {
     }
   }
 
-  // Player hurt damage hit
-  public playPlayerHurt() {
+  // Player hurt voice reaction (from uploaded asset) with synthesized fallback
+  public playPlayerHurt(volume: number = 0.95) {
+    if (this.isMuted) return;
+
+    const now = Date.now();
+    // Allow rapid hits with a comfortable debounce (150ms gap) to retrigger punchily
+    if (now - this.lastPlayerHurtTime > 150) {
+      this.lastPlayerHurtTime = now;
+      if (typeof Audio !== 'undefined') {
+        try {
+          if (!this.playerHurtAudio) {
+            this.playerHurtAudio = new Audio('/assets/aistudio/user_damage_682f3b48.mp3');
+          }
+          this.playerHurtAudio.currentTime = 0;
+          this.playerHurtAudio.volume = Math.max(0, Math.min(1, volume));
+          const playPromise = this.playerHurtAudio.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(() => {
+              this.playSynthesizedPlayerHurt();
+            });
+          }
+          return;
+        } catch {
+          // Fall through to synthesizer
+        }
+      }
+    }
+
+    this.playSynthesizedPlayerHurt();
+  }
+
+  // Synthesized fallback for player damage grunt
+  public playSynthesizedPlayerHurt() {
     const ctx = this.getContext();
     if (!ctx) return;
 
@@ -410,7 +550,7 @@ class SoundEngine {
       osc.start(now);
       osc.stop(now + 0.25);
     } catch (e) {
-      console.warn('Audio playPlayerHurt failed', e);
+      console.warn('Audio playSynthesizedPlayerHurt failed', e);
     }
   }
 
@@ -511,8 +651,46 @@ class SoundEngine {
     }
   }
 
-  // Defeat / Game Over mournful descent
-  public playDefeat() {
+  // Defeat / Game Over sound effect (from uploaded boss_win asset) with synthesized fallback
+  public playDefeat(volume: number = 0.95) {
+    if (this.isMuted) return;
+
+    if (typeof Audio !== 'undefined') {
+      try {
+        if (!this.defeatAudio) {
+          this.defeatAudio = new Audio('/assets/aistudio/boss_win_4ae7645d.mp3');
+        }
+        this.defeatAudio.currentTime = 0;
+        this.defeatAudio.volume = Math.max(0, Math.min(1, volume));
+        const playPromise = this.defeatAudio.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            this.playSynthesizedDefeat();
+          });
+        }
+        return;
+      } catch {
+        // Fall through to synthesizer
+      }
+    }
+
+    this.playSynthesizedDefeat();
+  }
+
+  // Stop defeat voice playback (e.g. when player restarts)
+  public stopDefeat() {
+    if (this.defeatAudio) {
+      try {
+        this.defeatAudio.pause();
+        this.defeatAudio.currentTime = 0;
+      } catch {
+        // Ignore
+      }
+    }
+  }
+
+  // Synthesized fallback for defeat
+  public playSynthesizedDefeat() {
     const ctx = this.getContext();
     if (!ctx) return;
 
@@ -533,7 +711,7 @@ class SoundEngine {
       osc.start(now);
       osc.stop(now + 0.8);
     } catch (e) {
-      console.warn('Audio playDefeat failed', e);
+      console.warn('Audio playSynthesizedDefeat failed', e);
     }
   }
 }
